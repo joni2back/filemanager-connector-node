@@ -52,30 +52,91 @@ app.get('/filemanager/file/content', (req, res) => {
 });
 
 
-app.post('/filemanager/file/remove', (req, res) => {
+
+app.post('/filemanager/items/copy', (req, res) => {
+    const { path, filenames, destination } = req.body;
+
+    const promises = (filenames || []).map(f => {
+        return new Promise((resolve, reject) => {
+            const oldPath = path + '/' + f;
+            const newPath = destination + '/' + f;
+            fs.copyFile(oldPath, newPath, err => {
+                const response = {
+                    success: !err,
+                    error: err,
+                    oldPath,
+                    newPath,
+                    filename: f
+                };
+                return err ? reject(response) : resolve(response);
+            });        
+        });        
+    });
+
+    Promise.all(promises).then(values => {
+        res.json({
+            success: true,
+            result: values
+        });
+    }).catch(values => {
+        res.status(500).json({
+            success: false,
+            errorMsg: 'An error ocurred copying files',
+            error: values,
+        });
+    });
+});
+
+app.post('/filemanager/items/move', (req, res) => {
+    const { path, filenames, destination } = req.body;
+
+    const promises = (filenames || []).map(f => {
+        return new Promise((resolve, reject) => {
+            const oldPath = path + '/' + f;
+            const newPath = destination + '/' + f;
+            fs.rename(oldPath, newPath, err => {
+                const response = {
+                    success: !err,
+                    error: err,
+                    oldPath,
+                    newPath,
+                    filename: f
+                };
+                return err ? reject(response) : resolve(response);
+            });        
+        });        
+    });
+
+    Promise.all(promises).then(values => {
+        res.json({
+            success: true,
+            result: values
+        });
+    }).catch(values => {
+        res.status(500).json({
+            success: false,
+            errorMsg: 'An error ocurred moving files',
+            error: values,
+        });
+    });
+});
+
+
+app.post('/filemanager/items/remove', (req, res) => {
     const { path, filenames, recursive } = req.body;
 
     const promises = (filenames || []).map(f => {
         const fullPath = path + '/' + f;
-        console.log(fullPath);
         return new Promise((resolve, reject) => {
             fs.unlink(fullPath, err => {
-                if (err) {
-                    return reject({
-                        success: false,
-                        error: err,
-                        path,
-                        filename: f,
-                        fullPath
-                    });
-                }
-                return resolve({
-                    success: true,
-                    error: null,
+                const response = {
+                    success: !err,
+                    error: err,
                     path,
                     filename: f,
                     fullPath
-                });
+                };
+                return err ? reject(response) : resolve(response);
             });
         });
     });
