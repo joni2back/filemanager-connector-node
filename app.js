@@ -27,23 +27,32 @@ app.use(function(req, res, next) {
 
 app.get('/filemanager/list', (req, res) => {
     const path = req.query.path || '/';
-    let items = [];
 
     fs.readdir(path, (err, files) => {
         if (err) {
             return apiError(res)('Cannot read folder', err);
         }
 
-        items = (files || []).map(f => {
+        let items = (files || []).map(f => {
             const fpath = path + '/' + f;
             let type = 'file';
+            let size = 0;
+            let createdAt = null;
+            let updatedAt = null;
             try {
-                type = fs.statSync(fpath).isDirectory() ? 'dir' : type;
+                const stat = fs.statSync(fpath);
+                type = stat.isDirectory() ? 'dir' : type;
+                size = stat.size;
+                createdAt = stat.birthtimeMs;
+                updatedAt = stat.mtimeMs;
             } catch (err) {
             }
             return {
                 name: f,
-                type
+                type,
+                size,
+                createdAt,
+                updatedAt
             }
         });
 
@@ -128,6 +137,27 @@ app.post('/filemanager/items/move', (req, res) => {
     });
 });
 
+app.post('/filemanager/item/move', (req, res) => {
+    const { path, destination } = req.body;
+
+    const promise = new Promise((resolve, reject) => {
+        fs.rename(path, destination, err => {
+            const response = {
+                success: !err,
+                error: err,
+                path,
+                destination
+            };
+            return err ? reject(response) : resolve(response);
+        });        
+    });        
+
+    promise.then(values => {
+        return apiResponse(res)(values);
+    }).catch(err => {
+        return apiError(res)('An error ocurred renaming file', err);
+    });
+});
 
 app.post('/filemanager/items/upload', (req, res, next) => {
     const upload = multer({
