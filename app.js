@@ -28,11 +28,11 @@ app.use((req, res, next) => {
 });
 
 app.get('/filemanager/list', (req, res) => {
-  const path = req.query.path || '/';
+  const path = req.query.path || '.';
 
   fs.readdir(path, (err, files) => {
     if (err) {
-      return apiError(res)('Cannot read folder', err);
+      return apiError(res)('Cannot read that folder', err);
     }
 
     const items = (files || []).map((f) => {
@@ -52,12 +52,13 @@ app.get('/filemanager/list', (req, res) => {
       }
       return {
         name: f,
+        path: fpath,
         type,
         size,
         createdAt,
         updatedAt,
       };
-    }).filter();
+    }).filter(Boolean);
 
     return apiResponse(res)(items);
   });
