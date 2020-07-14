@@ -8,10 +8,10 @@
   },
   "author": "Jonas Sciagula Street",
   "dependencies": {
-    "express": "~4.16.4",
+    "express": "^4.16.4",
     "multer": "~1.4.1"
   },
   "devDependencies": {
-    "nodemon": "~1.18.9"
+    "nodemon": "^2.0.4"
   }
 }
